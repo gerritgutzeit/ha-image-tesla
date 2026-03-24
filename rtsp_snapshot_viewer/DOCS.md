@@ -8,7 +8,7 @@ This add-on was built so a camera can be checked from **browsers that do not sup
 
 ## Features
 
-- **Configurable** RTSP URL and snapshot interval (add-on options)
+- **Configurable** named RTSP streams, default camera (`active_camera`), snapshot interval, and an in-page **camera selector** (ffmpeg follows the selection)
 - **Minimal fullscreen** page: black background, one image, scaled with `object-fit: contain`
 - **Smart refresh**: **Server-Sent Events** (`/events`) notify the browser when `snapshot.jpg` changes (mtime), so the JPEG is only re-fetched after a new frame—no blind timer downloads. **~250 ms** server-side check; SSE keepalive comments every **25 s**. If `EventSource` is missing or gets no event in **4 s**, the page falls back to the configured **interval-based** timer (Tesla-friendly).
 - **503** response until the first frame exists: `Snapshot not yet available`
@@ -32,12 +32,15 @@ Private repositories cannot be cloned by the Supervisor without credentials. Use
 
 ## Configuration
 
-| Option      | Description |
-|------------|-------------|
-| `rtsp_url` | Full RTSP URL, e.g. `rtsp://user:password@192.168.1.50:554/stream1` |
-| `interval` | Target **seconds between the start** of each capture (1–86400). The loop **subtracts** ffmpeg run time so e.g. `1` aims for ~one frame per second when the camera and network keep up. The web UI refresh uses a small extra buffer (100 ms at 1 s, up to 500 ms at longer intervals). |
+| Option           | Description |
+|-----------------|-------------|
+| `cameras`       | List of streams. Each entry has **`name`** (shown in the viewer and in options) and **`url`** (full RTSP URL). Add as many as you need. |
+| `active_camera` | **Name** of the camera to use when the add-on **starts** (must match one of the `cameras[].name` values). After start, the **toolbar dropdown** in the web UI switches which stream ffmpeg captures until the next restart. |
+| `interval`      | Target **seconds between the start** of each capture (1–86400). The loop **subtracts** ffmpeg run time so e.g. `1` aims for ~one frame per second when the camera and network keep up. The web UI refresh uses a small extra buffer (100 ms at 1 s, up to 500 ms at longer intervals). |
 
-**Tapo C200 (example)**
+**Migrating from older versions** (single `rtsp_url` option): remove `rtsp_url` and add one row under **`cameras`** with a **`name`** and your previous URL as **`url`**. Set **`active_camera`** to that same name.
+
+**Tapo C200 (example)** — use two `cameras` entries with different names, e.g. `Tapo HD` / `Tapo SD`:
 
 - HD: `rtsp://USER:PASS@CAMERA_IP:554/stream1`
 - SD: `rtsp://USER:PASS@CAMERA_IP:554/stream2`

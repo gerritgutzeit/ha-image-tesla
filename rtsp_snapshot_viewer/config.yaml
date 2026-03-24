@@ -1,12 +1,13 @@
 name: "RTSP Snapshot Viewer"
-version: "1.1.5"
+version: "1.2.0"
 slug: rtsp_snapshot_viewer
 url: https://github.com/gerritgutzeit/ha-image-tesla
 description: >-
-  Fullscreen live JPEG snapshots from any RTSP camera inside Home Assistant (Ingress).
-  Uses ffmpeg with TCP transport for reliable streams (e.g. Tapo C200). The browser loads
-  a minimal page and reloads only the image on your configured interval—no HLS, WebRTC,
-  or in-browser video codecs. Set rtsp_url and interval below; credentials stay in HA.
+  Fullscreen live JPEG snapshots from RTSP cameras inside Home Assistant (Ingress).
+  Configure one or more named streams in options; pick which one to show from the
+  viewer toolbar. Uses ffmpeg with TCP transport (e.g. Tapo C200). The browser loads
+  a minimal page and refreshes only the image on your interval—no HLS, WebRTC, or
+  in-browser video codecs. Credentials stay in HA.
 panel_title: RTSP Snapshot
 arch:
   - aarch64
@@ -20,8 +21,14 @@ ports:
 panel_icon: mdi:camera
 init: false
 options:
-  rtsp_url: "rtsp://user:password@192.168.1.100:554/stream1"
+  cameras:
+    - name: Camera 1
+      url: "rtsp://user:password@192.168.1.100:554/stream1"
+  active_camera: Camera 1
   interval: 10
 schema:
-  rtsp_url: str
+  cameras:
+    - name: str
+      url: str
+  active_camera: str
   interval: int(1,86400)
