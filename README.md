@@ -31,7 +31,7 @@ The original goal was to **check a camera feed from the Tesla in-car web browser
 
 - **Configurable RTSP URL** and **snapshot interval** (add-on options)
 - **Minimal fullscreen page**: black background, one image, `object-fit: contain`
-- **Browser reloads only the image** (not the whole page), with cache-busting
+- **Image updates when the file changes**: Server-Sent Events; timer fallback if SSE is unavailable
 - **503** until the first frame exists (`Snapshot not yet available`)
 - **Multi-arch** builds: `aarch64`, `amd64`, `armhf`, `armv7`
 

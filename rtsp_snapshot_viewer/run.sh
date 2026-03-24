@@ -30,13 +30,77 @@ time.sleep(remain)
 ) &
 
 cat >/snapshot_server.py <<'PY'
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 import os
+import queue
+import threading
+import time
+from typing import List, Optional
 
 SNAPSHOT = "/tmp/snapshot.jpg"
 PORT = 8099
 REFRESH_MS = int(os.environ["REFRESH_MS"])
+
+
+class Broadcaster:
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._clients: List[queue.Queue] = []
+
+    def subscribe(self) -> queue.Queue:
+        q = queue.Queue(maxsize=4)
+        with self._lock:
+            self._clients.append(q)
+        return q
+
+    def unsubscribe(self, q: queue.Queue) -> None:
+        with self._lock:
+            try:
+                self._clients.remove(q)
+            except ValueError:
+                pass
+
+    def publish(self, mtime: float) -> None:
+        with self._lock:
+            for q in self._clients:
+                try:
+                    q.put_nowait(mtime)
+                except queue.Full:
+                    try:
+                        q.get_nowait()
+                    except queue.Empty:
+                        pass
+                    try:
+                        q.put_nowait(mtime)
+                    except queue.Full:
+                        pass
+
+
+broadcaster = Broadcaster()
+
+
+def _watch_snapshots() -> None:
+    last: Optional[float] = None
+    if os.path.isfile(SNAPSHOT):
+        try:
+            last = os.path.getmtime(SNAPSHOT)
+        except OSError:
+            last = None
+    while True:
+        time.sleep(0.25)
+        if not os.path.isfile(SNAPSHOT):
+            continue
+        try:
+            m = os.path.getmtime(SNAPSHOT)
+        except OSError:
+            continue
+        if last is None or m != last:
+            last = m
+            broadcaster.publish(m)
+
+
+threading.Thread(target=_watch_snapshots, daemon=True).start()
 
 HTML = f"""<!DOCTYPE html>
 <html lang="en">
@@ -52,10 +116,25 @@ html, body {{ margin: 0; height: 100%; overflow: hidden; background: #000; }}
 <body>
 <img id="cam" src="snapshot.jpg" alt="">
 <script>
-setInterval(() => {{
+(function() {{
   const img = document.getElementById('cam');
-  img.src = 'snapshot.jpg?t=' + Date.now();
-}}, {REFRESH_MS});
+  function bump(t) {{
+    img.src = 'snapshot.jpg?t=' + t;
+  }}
+  if (typeof EventSource !== 'undefined') {{
+    let sseOk = false;
+    const es = new EventSource('events');
+    es.onmessage = function(e) {{ sseOk = true; bump(e.data); }};
+    setTimeout(function() {{
+      if (!sseOk) {{
+        es.close();
+        setInterval(function() {{ bump(Date.now()); }}, {REFRESH_MS});
+      }}
+    }}, 4000);
+  }} else {{
+    setInterval(function() {{ bump(Date.now()); }}, {REFRESH_MS});
+  }}
+}})();
 </script>
 </body>
 </html>
@@ -75,6 +154,36 @@ class SnapshotHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
+            return
+        if path == "/events":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+            q = broadcaster.subscribe()
+            try:
+                if os.path.isfile(SNAPSHOT):
+                    try:
+                        m = os.path.getmtime(SNAPSHOT)
+                        self.wfile.write(f"data: {m}\n\n".encode())
+                        self.wfile.flush()
+                    except OSError:
+                        pass
+                while True:
+                    try:
+                        m = q.get(timeout=25.0)
+                    except queue.Empty:
+                        self.wfile.write(b": ping\n\n")
+                        self.wfile.flush()
+                        continue
+                    self.wfile.write(f"data: {m}\n\n".encode())
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                pass
+            finally:
+                broadcaster.unsubscribe(q)
             return
         if path == "/snapshot.jpg":
             if not os.path.isfile(SNAPSHOT):
@@ -117,7 +226,7 @@ def _startup_banner() -> None:
 
 if __name__ == "__main__":
     _startup_banner()
-    HTTPServer(("", PORT), SnapshotHandler).serve_forever()
+    ThreadingHTTPServer(("", PORT), SnapshotHandler).serve_forever()
 PY
 
 exec python3 /snapshot_server.py

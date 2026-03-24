@@ -10,7 +10,7 @@ This add-on was built so a camera can be checked from **browsers that do not sup
 
 - **Configurable** RTSP URL and snapshot interval (add-on options)
 - **Minimal fullscreen** page: black background, one image, scaled with `object-fit: contain`
-- **Only the image reloads** (not the full page), with cache-busting
+- **Smart refresh**: **Server-Sent Events** (`/events`) notify the browser when `snapshot.jpg` changes (mtime), so the JPEG is only re-fetched after a new frame—no blind timer downloads. **~250 ms** server-side check; SSE keepalive comments every **25 s**. If `EventSource` is missing or gets no event in **4 s**, the page falls back to the configured **interval-based** timer (Tesla-friendly).
 - **503** response until the first frame exists: `Snapshot not yet available`
 - **ffmpeg** uses **RTSP over TCP** (`-rtsp_transport tcp`) for reliable camera connections
 - **Atomic updates**: writes `snapshot_new.jpg`, then renames to `snapshot.jpg` so partial files are not served
@@ -65,6 +65,8 @@ Ingress only reaches the app **through Home Assistant**. To use **Nginx Proxy Ma
 3. Check from a PC: `http://<Home_Assistant_IP>:8099/` (use the port you mapped). You should see the same page as Ingress.
 
 **Nginx Proxy Manager**
+
+- For **live updates** through NPM, SSE must not be buffered: **Nginx Proxy Manager** → your proxy host → **Advanced** → custom Nginx configuration, e.g. `proxy_buffering off;` and `proxy_cache off;` (or the equivalent for your setup). Without this, the page may fall back to timer polling after a few seconds.
 
 - **Details** → **Domain names**: e.g. `cam.example.com` (use a **subdomain** at the **root path** `/` — the page uses relative `snapshot.jpg` URLs, so path-prefix proxies need extra NPM rules).
 - **Scheme**: `http`
