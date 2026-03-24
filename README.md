@@ -108,6 +108,7 @@ ha-image-tesla/
     ├── config.yaml
     ├── build.yaml
     ├── Dockerfile
+    ├── DOCS.md                   # Shown in HA add-on “Documentation” tab
     └── run.sh
 ```
 
