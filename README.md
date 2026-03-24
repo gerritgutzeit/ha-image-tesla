@@ -15,6 +15,10 @@
 
 This repository hosts a **Home Assistant Supervisor add-on** that shows a **single live-updating JPEG** from an **RTSP** stream inside the Home Assistant UI (Ingress). It does **not** stream video in the browser: only periodic still images, so it works even where video playback is limited.
 
+### Why it was built (Tesla browser)
+
+The original goal was to **check a camera feed from the Tesla in-car web browser** while opening Home Assistant there. That environment **does not support video** in a useful way for typical camera streams (no practical HLS, WebRTC, or normal in-browser video for this use case). The practical conclusion was to **avoid video entirely** and serve only **refreshed static JPEGs**—which any browser can display—so the same Ingress page works in the Tesla browser as well as on a phone or desktop.
+
 | Goal | How |
 |------|-----|
 | Stable camera compatibility | `ffmpeg` with **RTSP over TCP** (`-rtsp_transport tcp`) |
@@ -111,6 +115,6 @@ ha-image-tesla/
 
 ## GitHub “About” box (suggested short description)
 
-> Home Assistant add-on: fullscreen RTSP JPEG snapshots in Ingress — ffmpeg + minimal web UI.
+> HA add-on: RTSP camera as refreshed JPEGs (Tesla browser–friendly; no video codecs) via Ingress.
 
 ---
