@@ -83,7 +83,25 @@ class SnapshotHandler(BaseHTTPRequestHandler):
         self.send_error(404)
 
 
+def _startup_banner() -> None:
+    print(
+        r"""
+    .--.      .--.      .--.      .--.
+   |    |    |    |    |    |    |    |
+    '--'      '--'      '--'      '--'
+  ___________________________________________
+ |                                           |
+ |      RTSP Snapshot Viewer is active       |
+ |              (port %d)                    |
+ |___________________________________________|
+"""
+        % PORT,
+        flush=True,
+    )
+
+
 if __name__ == "__main__":
+    _startup_banner()
     HTTPServer(("", PORT), SnapshotHandler).serve_forever()
 PY
 

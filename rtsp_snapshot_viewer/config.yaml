@@ -1,5 +1,5 @@
 name: "RTSP Snapshot Viewer"
-version: "1.0.0"
+version: "1.1.0"
 slug: rtsp_snapshot_viewer
 description: "Displays a live JPEG snapshot from an RTSP stream, refreshed every 10 seconds."
 arch:
