@@ -2,6 +2,8 @@
 
 RTSP_URL=$(bashio::config 'rtsp_url')
 INTERVAL=$(bashio::config 'interval')
+# Slightly after each ffmpeg capture so the new JPEG is usually ready (same as 10s -> 10500 ms).
+export REFRESH_MS=$((INTERVAL * 1000 + 500))
 
 (
   while true; do
@@ -19,25 +21,26 @@ import os
 
 SNAPSHOT = "/tmp/snapshot.jpg"
 PORT = 8099
+REFRESH_MS = int(os.environ["REFRESH_MS"])
 
-HTML = """<!DOCTYPE html>
+HTML = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RTSP Snapshot</title>
 <style>
-html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
-#cam { display: block; width: 100vw; height: 100vh; object-fit: contain; }
+html, body {{ margin: 0; height: 100%; overflow: hidden; background: #000; }}
+#cam {{ display: block; width: 100vw; height: 100vh; object-fit: contain; }}
 </style>
 </head>
 <body>
 <img id="cam" src="snapshot.jpg" alt="">
 <script>
-setInterval(() => {
+setInterval(() => {{
   const img = document.getElementById('cam');
   img.src = 'snapshot.jpg?t=' + Date.now();
-}, 10500);
+}}, {REFRESH_MS});
 </script>
 </body>
 </html>
