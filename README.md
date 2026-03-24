@@ -59,7 +59,7 @@ Private GitHub repositories cannot be cloned by the Supervisor without credentia
 | Option | Description |
 |--------|-------------|
 | `rtsp_url` | Full RTSP URL, e.g. `rtsp://user:password@192.168.1.50:554/stream1` |
-| `interval` | Seconds between ffmpeg snapshot captures (the web UI refresh follows this, with a small offset) |
+| `interval` | Target seconds **between capture starts** (1–86400). Elapsed ffmpeg time is subtracted so low values (e.g. `1`) aim for ~1 frame/s; the page refresh buffer scales (about +100 ms at 1 s, up to +500 ms at 10 s). |
 
 **Tapo C200 (example):**
 

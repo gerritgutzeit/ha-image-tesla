@@ -2,15 +2,30 @@
 
 RTSP_URL=$(bashio::config 'rtsp_url')
 INTERVAL=$(bashio::config 'interval')
-# Slightly after each ffmpeg capture so the new JPEG is usually ready (same as 10s -> 10500 ms).
-export REFRESH_MS=$((INTERVAL * 1000 + 500))
+[ "${INTERVAL:-1}" -lt 1 ] && INTERVAL=1
+export INTERVAL
+
+# Browser poll: interval + buffer. Buffer scales down for short intervals (1s -> +100 ms, 10s -> +500 ms).
+EXTRA_MS=$((INTERVAL * 100))
+[ "$EXTRA_MS" -gt 500 ] && EXTRA_MS=500
+export REFRESH_MS=$((INTERVAL * 1000 + EXTRA_MS))
 
 (
   while true; do
-    ffmpeg -rtsp_transport tcp -y -i "$RTSP_URL" \
+    SNAP_T0=$(python3 -c "import time; print(time.time())")
+    export SNAP_T0
+    ffmpeg -hide_banner -loglevel error -rtsp_transport tcp \
+      -an -fflags nobuffer -flags low_delay \
+      -y -i "$RTSP_URL" \
       -frames:v 1 -f image2 /tmp/snapshot_new.jpg 2>/dev/null \
       && mv /tmp/snapshot_new.jpg /tmp/snapshot.jpg
-    sleep "$INTERVAL"
+    python3 -c "
+import os, time
+interval = float(os.environ['INTERVAL'])
+start = float(os.environ['SNAP_T0'])
+remain = max(0.0, interval - (time.time() - start))
+time.sleep(remain)
+"
   done
 ) &
 

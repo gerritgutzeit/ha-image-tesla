@@ -35,7 +35,7 @@ Private repositories cannot be cloned by the Supervisor without credentials. Use
 | Option      | Description |
 |------------|-------------|
 | `rtsp_url` | Full RTSP URL, e.g. `rtsp://user:password@192.168.1.50:554/stream1` |
-| `interval` | Seconds between ffmpeg captures. The web UI refresh follows this (with a small offset). |
+| `interval` | Target **seconds between the start** of each capture (1–86400). The loop **subtracts** ffmpeg run time so e.g. `1` aims for ~one frame per second when the camera and network keep up. The web UI refresh uses a small extra buffer (100 ms at 1 s, up to 500 ms at longer intervals). |
 
 **Tapo C200 (example)**
 
