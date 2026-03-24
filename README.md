@@ -82,6 +82,10 @@ Credentials live in **Home Assistant add-on options**, not in this git repositor
 2. Turn on **Show in sidebar** for a fullscreen Ingress panel
 3. Use **Open web UI** to open the viewer
 
+### Nginx Proxy Manager / LAN access
+
+The add-on can **publish port 8099** to the Home Assistant host (see **Network** on the add-on page). Then you can point NPM at `http://<HA_LAN_IP>:8099` with a dedicated subdomain. The viewer uses **relative** image URLs, so prefer **`/` at the root** of that host (not a subpath like `/camera/` without extra proxy rules). The Python server has **no authentication**—protect it at the proxy (access lists, VPN, etc.). Details: [DOCS.md](rtsp_snapshot_viewer/DOCS.md).
+
 ---
 
 ## Architecture

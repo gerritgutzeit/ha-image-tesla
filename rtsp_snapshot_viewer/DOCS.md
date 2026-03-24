@@ -56,6 +56,29 @@ ffmpeg -rtsp_transport tcp -y -i "rtsp://USER:PASS@IP:554/stream1" -frames:v 1 /
 2. Enable **Show in sidebar** for a fullscreen Ingress panel.
 3. Use **Open web UI** to open the viewer.
 
+## Expose on your LAN / reverse proxy (e.g. Nginx Proxy Manager)
+
+Ingress only reaches the app **through Home Assistant**. To use **Nginx Proxy Manager** (or any reverse proxy) on the same network, the add-on must also listen on a **host port**.
+
+1. Open the add-on → **Configuration** (or **Network**, depending on your HA version).
+2. Under **Network** / **Port mapping**, set **8099/tcp** to a host port (often **8099**, or another free port). Save and restart the add-on if prompted.
+3. Check from a PC: `http://<Home_Assistant_IP>:8099/` (use the port you mapped). You should see the same page as Ingress.
+
+**Nginx Proxy Manager**
+
+- **Details** → **Domain names**: e.g. `cam.example.com` (use a **subdomain** at the **root path** `/` — the page uses relative `snapshot.jpg` URLs, so path-prefix proxies need extra NPM rules).
+- **Scheme**: `http`
+- **Forward hostname / IP**: your **Home Assistant host’s LAN IP** (the machine running Supervisor), e.g. `192.168.1.50`
+- **Forward port**: the **host** port you mapped (e.g. `8099`)
+- **Block common exploits**: on
+- **Websockets support**: optional (this add-on does not need it for snapshots)
+
+If NPM runs **on the same HA OS machine**, forwarding to the **HA LAN IP** and mapped port is usually enough. If NPM runs elsewhere, use an IP/firewall rule that can reach that host port.
+
+**Security (important)**
+
+The built-in server has **no login**. Anyone who can open the URL sees your camera snapshots. Prefer **NPM Access Lists**, **HTTP Basic Auth**, **Authelia**, **Cloudflare Access**, **VPN-only** reachability, or keep the port **disabled** and use Ingress only.
+
 ## Architecture
 
 ```text
@@ -64,8 +87,11 @@ RTSP camera  --TCP-->  ffmpeg (interval loop)  -->  /tmp/snapshot.jpg
                                                           v
                                                Python HTTP server :8099
                                                           |
-                                                          v
-                                               Home Assistant Ingress
+                                    +---------------------+---------------------+
+                                    |                                           |
+                                    v                                           v
+                          Home Assistant Ingress              Optional host port
+                                                          (LAN / reverse proxy)
 ```
 
 ## More information
