@@ -58,13 +58,14 @@ Private GitHub repositories cannot be cloned by the Supervisor without credentia
 
 | Option | Description |
 |--------|-------------|
-| `rtsp_url` | Full RTSP URL, e.g. `rtsp://user:password@192.168.1.50:554/stream1` |
+| `cameras` | List of **`name`** + **`url`** RTSP entries; add multiple streams in add-on options. |
+| `active_camera` | Which **`name`** ffmpeg uses when the add-on **starts**; the web UI has a dropdown to switch without editing options. |
 | `interval` | Target seconds **between capture starts** (1–86400). Elapsed ffmpeg time is subtracted so low values (e.g. `1`) aim for ~1 frame/s; the page refresh buffer scales (about +100 ms at 1 s, up to +500 ms at 10 s). |
 
-**Tapo C200 (example):**
+**Tapo C200 (example):** add two cameras (e.g. HD and SD) with different RTSP paths:
 
 - HD: `rtsp://USER:PASS@CAMERA_IP:554/stream1`
-- SD: `…/stream2`
+- SD: `rtsp://USER:PASS@CAMERA_IP:554/stream2`
 
 **Manual ffmpeg test (on any machine with ffmpeg):**
 
